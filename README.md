@@ -57,10 +57,15 @@ Cada comentario `TODO` describe exactamente lo que se espera. Los archivos marca
 Guarde en `app/docs/evidencia-android.png` una captura de **su** app corriendo en el emulador,
 en la pestaña **Perfil** (debe verse *Plataforma: android*), y complete:
 
-- Carné:
-- appId:
-- Versión de Node / Ionic CLI / Capacitor (`node -v`, `ionic -v`, `npx cap -V`):
-- ¿Se generó el APK de depuración? (sí/no):
+- Carné: C4J698
+- appId: cr.ac.ucr.if0009.c4j698
+- Versiones: Node v26.8.1 / Ionic CLI 7.2.1 / Capacitor 8.6.2 (npm 11.19.0)
+- ¿Se generó el APK de depuración? (no)
+
+**Nota de evidencia:** no se dispuso de emulador Android, por lo que, con la autorización
+del profesor, la captura `app/docs/evidencia-android.png` muestra el build de producción y
+`npx cap sync android` terminados correctamente. El log completo está en
+`Evidencias/build-exitoso.txt` y una copia de la imagen en `Evidencias/`.
 
 ## Reglas
 
