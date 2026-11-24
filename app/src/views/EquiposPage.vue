@@ -26,14 +26,21 @@
 
       <!-- M4 — Lista con nombre, código · categoría, badge de estado y enlace a editar. -->
       <ion-list v-if="equipos.length > 0">
-        <ion-item v-for="equipo in equipos" :key="equipo.id"
-          :router-link="`/tabs/equipos/${equipo.id}/editar`" detail>
-          <ion-label>
-            <h3>{{ equipo.nombre }}</h3>
-            <p>{{ equipo.codigo }} · {{ equipo.categoria.nombre }}</p>
-          </ion-label>
-          <ion-badge slot="end" :color="colorEstado[equipo.estado]">{{ equipo.estado }}</ion-badge>
-        </ion-item>
+        <!-- M6 — Al deslizar el ítem aparece la opción Eliminar. -->
+        <ion-item-sliding v-for="equipo in equipos" :key="equipo.id">
+          <ion-item :router-link="`/tabs/equipos/${equipo.id}/editar`" detail>
+            <ion-label>
+              <h3>{{ equipo.nombre }}</h3>
+              <p>{{ equipo.codigo }} · {{ equipo.categoria.nombre }}</p>
+            </ion-label>
+            <ion-badge slot="end" :color="colorEstado[equipo.estado]">{{ equipo.estado }}</ion-badge>
+          </ion-item>
+          <ion-item-options side="end">
+            <ion-item-option color="danger" @click="confirmarEliminacion(equipo, $event)">
+              <ion-icon slot="icon-only" :icon="trashOutline" />
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
       </ion-list>
 
       <!-- M4 — Esqueleto solo en la primera carga. -->
@@ -76,8 +83,7 @@ import { ErrorApi } from '@/services/errores';
 import { mostrarToast } from '@/services/avisos';
 import { useConexion, vibrar } from '@/composables/useConexion';
 
-void [IonItemSliding, IonItemOptions, IonItemOption, cloudOfflineOutline, trashOutline,
-  alertController, eliminar, ErrorApi, mostrarToast, vibrar];
+void [cloudOfflineOutline];
 
 const colorEstado: Record<Estado, string> = {
   disponible: 'success',
@@ -130,5 +136,42 @@ async function refrescar(evento: RefresherCustomEvent) {
 async function cargarMas(evento: InfiniteScrollCustomEvent) {
   await cargar(false);
   evento.target.complete();
+}
+
+/** M6 — Pregunta confirmación y elimina solo si el botón fue "destructive". */
+async function confirmarEliminacion(equipo: Equipo, evento: Event) {
+  // Primero cerramos el ítem deslizado.
+  const sliding = (evento.target as HTMLElement).closest('ion-item-sliding') as any;
+  sliding?.close();
+
+  const alerta = await alertController.create({
+    header: 'Eliminar equipo',
+    message: `¿Eliminar ${equipo.nombre}?`,
+    buttons: [
+      { text: 'Cancelar', role: 'cancel' },
+      { text: 'Eliminar', role: 'destructive' },
+    ],
+  });
+  await alerta.present();
+  const { role } = await alerta.onDidDismiss();
+  if (role !== 'destructive') return;
+
+  try {
+    await eliminar(equipo.id);
+    // 204: quitamos el equipo de la lista sin volver a cargarla.
+    equipos.value = equipos.value.filter((item) => item.id !== equipo.id);
+    await vibrar();
+    await mostrarToast('Equipo eliminado.', 'success');
+  } catch (error) {
+    if (error instanceof ErrorApi && error.status === 409) {
+      // Regla R1: está prestado, el mensaje viene de la API y el equipo se queda.
+      await mostrarToast(error.cuerpo?.mensaje ?? 'No se puede eliminar un equipo prestado.', 'warning');
+    } else if (error instanceof ErrorApi && error.status === 404) {
+      equipos.value = equipos.value.filter((item) => item.id !== equipo.id);
+      await mostrarToast('El equipo ya no existe.', 'warning');
+    } else {
+      await mostrarToast('No fue posible eliminar el equipo.', 'danger');
+    }
+  }
 }
 </script>
