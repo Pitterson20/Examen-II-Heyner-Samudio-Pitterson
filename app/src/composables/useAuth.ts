@@ -40,7 +40,7 @@ export function useAuth() {
     token.value = respuesta.token;
     usuario.value = respuesta.usuario;
     await SecureStorage.set(CLAVE_TOKEN, respuesta.token);
-    await SecureStorage.set(CLAVE_USUARIO, respuesta.usuario);
+    await SecureStorage.set(CLAVE_USUARIO, JSON.stringify(respuesta.usuario));
   }
 
   /** M2 — Restaurar la sesión al abrir la app. Solo se ejecuta una vez. */
@@ -52,8 +52,8 @@ export function useAuth() {
     const guardadoUsuario = await SecureStorage.get(CLAVE_USUARIO);
 
     if (typeof guardado === 'string') token.value = guardado;
-    if (guardadoUsuario && typeof guardadoUsuario === 'object') {
-      usuario.value = guardadoUsuario as Usuario;
+    if (typeof guardadoUsuario === 'string') {
+      usuario.value = JSON.parse(guardadoUsuario) as Usuario;
     }
   }
 
